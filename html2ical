@@ -6,12 +6,22 @@ from bs4 import BeautifulSoup
 from dateutil.parser import parse
 from icalendar import Calendar, Event, vCalAddress, vText
 from datetime import datetime, timedelta
+import hashlib
+
+def hash(*args):
+	hash = hashlib.md5()
+	for arg in args:
+		hash.update(arg.encode('utf-8'))
+
+	return hash.hexdigest()
+
+season = "2018/2019"
 
 cal = Calendar()
-cal.add('prodid', '-//Braves III 2018/2019 Schedule//mxm.dk//')
+cal.add('prodid', '-//Braves III {} Schedule//mxm.dk//'.format(season))
 cal.add('version', '2.0')
 
-with open(sys.argv[1]) as html_doc:
+with open(sys.argv[1], encoding='utf-8') as html_doc:
 	soup = BeautifulSoup(html_doc, 'html.parser')
 
 	rows = soup.select("#page > table.table4.border2 > tbody > tr")
@@ -57,6 +67,8 @@ with open(sys.argv[1]) as html_doc:
 		event.add('dtend', end_date)
 		event.add('dtstamp', datetime.now())
 		event.add('location', vText(location))
+		event.add('status', 'confirmed')
+		event.add('uid', hash(season, code))
 		event.add('summary', "{game_type} {home_team} vs {away_team} ({code})".format(
 				home_team=home_team,
 				away_team=away_team,
