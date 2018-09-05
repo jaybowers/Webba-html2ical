@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+
+import sys
+from bs4 import BeautifulSoup
+
+with open(sys.argv[1]) as html_doc:
+	soup = BeautifulSoup(html_doc, 'html.parser')
+
+	print(soup.prettify())
+
+#	print(soup.find_all("table", class_="table4")[0].tbody.tr)
+	rows = soup.select("#page > table.table4.border2 > tbody > tr")
+
+	for i in range(1, len(rows)):
+		row = rows[i]
+#		print(row)
+
+		tds = row.select("td")
+
+		date = tds[0].a.contents[0]
+		time = tds[1].contents[0]
+		home_team = tds[2].a.contents[0]
+		home_score = tds[3].contents[0]
+		home_points = tds[4].div.contents[0]
+		away_team = tds[5].a.contents[0]
+		away_score = tds[6].contents[0]
+		away_points = tds[7].div.contents[0]
+		location = tds[8].a.contents[0]
+		game_type = tds[9].contents[0]
+		code = tds[10].contents[0]
+		schedule = tds[11].contents[0]
+
+		print("{date} {time} {home_team} {home_score} {home_points} {away_team} {away_score} {away_points} {location} {game_type} {code} {schedule}"
+			.format(
+				date=date,
+				time=time,
+				home_team=home_team,
+				home_score=home_score,
+				home_points=home_points,
+				away_team=away_team,
+				away_score=away_score,
+				away_points=away_points,
+				location=location,
+				game_type=game_type,
+				code=code,
+				schedule=schedule
+				))
+
+		
