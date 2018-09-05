@@ -3,6 +3,8 @@
 import sys
 from bs4 import BeautifulSoup
 
+from dateutil.parser import parse
+
 with open(sys.argv[1]) as html_doc:
 	soup = BeautifulSoup(html_doc, 'html.parser')
 
@@ -46,4 +48,5 @@ with open(sys.argv[1]) as html_doc:
 				schedule=schedule
 				))
 
-		
+		actual_date = parse(date + " " + time)
+		print(actual_date)
