@@ -4,21 +4,22 @@ import sys
 from bs4 import BeautifulSoup
 
 from dateutil.parser import parse
+from icalendar import Calendar, Event, vCalAddress, vText
+from datetime import datetime, timedelta
+
+cal = Calendar()
+cal.add('prodid', '-//Braves III 2018/2019 Schedule//mxm.dk//')
+cal.add('version', '2.0')
 
 with open(sys.argv[1]) as html_doc:
 	soup = BeautifulSoup(html_doc, 'html.parser')
 
-	print(soup.prettify())
-
-#	print(soup.find_all("table", class_="table4")[0].tbody.tr)
 	rows = soup.select("#page > table.table4.border2 > tbody > tr")
 
 	for i in range(1, len(rows)):
 		row = rows[i]
-#		print(row)
 
 		tds = row.select("td")
-
 		date = tds[0].a.contents[0]
 		time = tds[1].contents[0]
 		home_team = tds[2].a.contents[0]
@@ -48,5 +49,30 @@ with open(sys.argv[1]) as html_doc:
 				schedule=schedule
 				))
 
-		actual_date = parse(date + " " + time)
-		print(actual_date)
+		start_date = parse(date + " " + time)
+		end_date = start_date + timedelta(hours=2)
+
+		event = Event()
+		event.add('dtstart', start_date)
+		event.add('dtend', end_date)
+		event.add('dtstamp', datetime.now())
+		event.add('location', vText(location))
+		event.add('summary', "{game_type} {home_team} vs {away_team} ({code})".format(
+				home_team=home_team,
+				away_team=away_team,
+				game_type=game_type,
+				code=code
+				))
+		event.add('descriptiopn', "A {game_type} game: {home_team} vs {away_team} ({code}) at {location} for {schedule}".format(
+				home_team=home_team,
+				away_team=away_team,
+				game_type=game_type,
+				location=location,
+				code=code,
+				schedule=schedule
+				))
+		cal.add_component(event)
+
+with open(sys.argv[2], 'wb') as ical:
+	ical.write(cal.to_ical())
+
