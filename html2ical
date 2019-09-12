@@ -7,6 +7,7 @@ from dateutil.parser import parse
 from icalendar import Calendar, Event, vCalAddress, vText
 from datetime import datetime, timedelta
 import hashlib
+import argparse
 
 def hash(*args):
 	hash = hashlib.md5()
@@ -15,13 +16,19 @@ def hash(*args):
 
 	return hash.hexdigest()
 
-season = "2018/2019"
+parser = argparse.ArgumentParser(description='Webba Schedule to ICal Parser.')
+parser.add_argument('-o', '--out', type=str, required=True, help='The ical file to output.')
+parser.add_argument('-t', '--title', type=str, required=True, help='The title of the calendar e.g. Braves III.')
+parser.add_argument('-s', '--season', type=str, required=True, help='The season of the calendar, e.g. 2019/2020.')
+parser.add_argument('files', nargs='+', help='The html files to be imported')
+args = parser.parse_args()
 
+season = args.season
 cal = Calendar()
-cal.add('prodid', '-//Braves III {} Schedule//mxm.dk//'.format(season))
+cal.add('prodid', '-//{} {}//mxm.dk//'.format(args.title, season))
 cal.add('version', '2.0')
 
-with open(sys.argv[1], encoding='utf-8') as html_doc:
+with open(args.files[0], encoding='utf-8') as html_doc:
 	soup = BeautifulSoup(html_doc, 'html.parser')
 
 	rows = soup.select("#page > table.table4.border2 > tbody > tr")
