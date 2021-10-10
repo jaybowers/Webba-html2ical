@@ -16,7 +16,7 @@ def hash(*args):
 
 	return hash.hexdigest()
 
-parser = argparse.ArgumentParser(description='Webba Schedule to ICal Parser.')
+parser = argparse.ArgumentParser(description='Webba Schedule to ICal.')
 parser.add_argument('-o', '--out', type=str, required=True, help='The ical file to output.')
 parser.add_argument('-t', '--title', type=str, required=True, help='The title of the calendar e.g. Braves III.')
 parser.add_argument('-s', '--season', type=str, required=True, help='The season of the calendar, e.g. 2019/2020.')
@@ -31,43 +31,36 @@ cal.add('version', '2.0')
 with open(args.files[0], encoding='utf-8') as html_doc:
 	soup = BeautifulSoup(html_doc, 'html.parser')
 
-	rows = soup.select("#page > table.table4.border2 > tbody > tr")
-
-	for i in range(1, len(rows)):
+	rows = soup.select("#hide-container > div.table-scroll > table > tbody > tr")
+	for i in range(0, len(rows)):
 		row = rows[i]
 
 		tds = row.select("td")
-		date = tds[0].a.contents[0]
-		time = tds[1].contents[0]
-		home_team = tds[2].a.contents[0]
-		home_score = tds[3].contents[0]
-		home_points = tds[4].div.contents[0]
-		away_team = tds[5].a.contents[0]
-		away_score = tds[6].contents[0]
-		away_points = tds[7].div.contents[0]
-		location = tds[8].a.contents[0]
-		game_type = tds[9].contents[0]
-		code = tds[10].contents[0]
-		schedule = tds[11].contents[0]
+		date        = tds[1].contents[0].strip()
+		time        = tds[1].contents[2].strip()
+		home_team   = tds[2].a.text.strip()
+		away_team   = tds[4].a.text.strip()
+		location    = tds[5].contents[0].strip()
 
-		print("{date} {time} {home_team} {home_score} {home_points} {away_team} {away_score} {away_points} {location} {game_type} {code} {schedule}"
+		print("{date} {time} {home_team} {away_team} {location}"
 			.format(
 				date=date,
 				time=time,
 				home_team=home_team,
-				home_score=home_score,
-				home_points=home_points,
 				away_team=away_team,
-				away_score=away_score,
-				away_points=away_points,
-				location=location,
-				game_type=game_type,
-				code=code,
-				schedule=schedule
+				location=location
 				))
 
-		start_date = parse(date + " " + time)
+		start_date = parse(date + " " + time, dayfirst = True)
 		end_date = start_date + timedelta(hours=2)
+#		print(" -> {start_date} {end_date} {home_team} {away_team} {location}"
+#			.format(
+#				start_date=start_date,
+#				end_date=end_date,
+#				home_team=home_team,
+#				away_team=away_team,
+#				location=location
+#				))
 
 		event = Event()
 		event.add('dtstart', start_date)
@@ -75,23 +68,18 @@ with open(args.files[0], encoding='utf-8') as html_doc:
 		event.add('dtstamp', datetime.now())
 		event.add('location', vText(location))
 		event.add('status', 'confirmed')
-		event.add('uid', hash(season, code))
-		event.add('summary', "{game_type} {home_team} vs {away_team} ({code})".format(
+		event.add('uid', hash(season, home_team, away_team))
+		event.add('summary', "{home_team} vs {away_team}".format(
 				home_team=home_team,
-				away_team=away_team,
-				game_type=game_type,
-				code=code
+				away_team=away_team
 				))
-		event.add('descriptiopn', "A {game_type} game: {home_team} vs {away_team} ({code}) at {location} for {schedule}".format(
+		event.add('descriptiopn', "A game: {home_team} vs {away_team} at {location}".format(
 				home_team=home_team,
 				away_team=away_team,
-				game_type=game_type,
-				location=location,
-				code=code,
-				schedule=schedule
+				location=location
 				))
 		cal.add_component(event)
 
-with open(sys.argv[2], 'wb') as ical:
+with open(args.out, 'wb') as ical:
 	ical.write(cal.to_ical())
 
